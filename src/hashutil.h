@@ -66,9 +66,9 @@ class TwoIndependentMultiplyShift {
     return (add_ + multiply_ * static_cast<decltype(multiply_)>(key)) >> 64;
   }
 
-  unsigned char* serialize(unsigned char* buf) {
+  unsigned char *serialize(unsigned char *buf) {
     unsigned int total_sz = 2 * sizeof(unsigned __int128);
-    memmove(buf, &total_sz,sizeof(total_sz));
+    memmove(buf, &total_sz, sizeof(total_sz));
     buf += sizeof(total_sz);
     memmove(buf, &multiply_, sizeof(multiply_));
     buf += sizeof(multiply_);
@@ -79,14 +79,13 @@ class TwoIndependentMultiplyShift {
   unsigned int serialSize() const {
     return sizeof(unsigned int) + 2 * sizeof(unsigned __int128);
   }
-  int fromBuf(unsigned char* buf, unsigned int len) {
+  int fromBuf(unsigned char *buf, unsigned int len) {
     auto buf_start = buf;
     memmove(&multiply_, buf, sizeof(multiply_));
     buf += sizeof(multiply_);
     memmove(&add_, buf, sizeof(add_));
     buf += sizeof(add_);
-    if(buf - buf_start != len)
-      return 1;
+    if (buf - buf_start != len) return 1;
     return 0;
   }
 };
@@ -113,13 +112,13 @@ class SimpleTabulation {
     return result;
   }
 
-  unsigned char* serialize(unsigned char* buf) {
+  unsigned char *serialize(unsigned char *buf) {
     unsigned int total_sz = sizeof(tables_);
-    memmove(buf, &total_sz,sizeof(total_sz));
+    memmove(buf, &total_sz, sizeof(total_sz));
     auto array_dimeny_sz = sizeof(tables_[0]);
-    auto array_dimenx_sz = sizeof(tables_)/array_dimeny_sz;
-    for(unsigned int i =0 ;i< array_dimenx_sz;i++){
-      memmove(buf, tables_[i],array_dimeny_sz);
+    auto array_dimenx_sz = sizeof(tables_) / array_dimeny_sz;
+    for (unsigned int i = 0; i < array_dimenx_sz; i++) {
+      memmove(buf, tables_[i], array_dimeny_sz);
       buf += array_dimeny_sz;
     }
     return buf;
@@ -127,16 +126,15 @@ class SimpleTabulation {
   unsigned int serialSize() const {
     return sizeof(unsigned int) + sizeof(tables_);
   }
-  int fromBuf(unsigned char* buf, unsigned int len) {
+  int fromBuf(unsigned char *buf, unsigned int len) {
     auto buf_start = buf;
     auto array_dimeny_sz = sizeof(tables_[0]);
-    auto array_dimenx_sz = sizeof(tables_)/array_dimeny_sz;
-    for(unsigned int i =0 ;i< array_dimenx_sz;i++){
-      memmove(tables_[i], buf,array_dimeny_sz);
+    auto array_dimenx_sz = sizeof(tables_) / array_dimeny_sz;
+    for (unsigned int i = 0; i < array_dimenx_sz; i++) {
+      memmove(tables_[i], buf, array_dimeny_sz);
       buf += array_dimeny_sz;
     }
-    if(buf - buf_start != len)
-      return 1;
+    if (buf - buf_start != len) return 1;
     return 0;
   }
 };

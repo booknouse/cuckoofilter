@@ -87,6 +87,7 @@ class CuckooFilter {
   double BitsPerItem() const { return 8.0 * table_->SizeInBytes() / Size(); }
 
  public:
+  CuckooFilter():num_buckets_(0),num_items_(0),table_(nullptr){}
   explicit CuckooFilter(const size_t max_num_keys) : num_items_(0), victim_(), hasher_() {
     size_t assoc = 4;
     num_buckets_ = upperpower2(std::max<uint64_t>(1, max_num_keys / assoc));
@@ -99,8 +100,10 @@ class CuckooFilter {
   }
 
   ~CuckooFilter() { delete table_; }
-  unsigned char* serialize(unsigned char* buf) {
-    unsigned int total_sz = sizeof(num_buckets_) + table_->serialSize() + sizeof(num_items_) + sizeof(victim_) + hasher_->serialSize();
+  unsigned char *serialize(unsigned char *buf) {
+    unsigned int total_sz = sizeof(num_buckets_) + table_->serialSize() +
+                            sizeof(num_items_) + sizeof(victim_) +
+                            hasher_.serialSize();
     memmove(buf, &total_sz, sizeof(unsigned int));
     buf += sizeof(unsigned int);
     memmove(buf, &num_buckets_, sizeof(num_buckets_));
@@ -110,18 +113,19 @@ class CuckooFilter {
     buf += sizeof(num_items_);
     memmove(buf, &victim_, sizeof(victim_));
     buf += sizeof(victim_);
-    buf = hasher_->serialize(buf);
+    buf = hasher_.serialize(buf);
     return buf;
   }
   unsigned int serialSize() const {
-    return sizeof(unsigned int)+ sizeof(num_buckets_) + table_->serialSize() + sizeof(num_items_) + sizeof(victim_) + hasher_->serialSize();
+    return sizeof(unsigned int) + sizeof(num_buckets_) + table_->serialSize() +
+           sizeof(num_items_) + sizeof(victim_) + hasher_.serialSize();
   }
-  int fromBuf(unsigned char* buf, unsigned int len) {
+  int fromBuf(unsigned char *buf, unsigned int len) {
     auto buf_start = buf;
     memmove(&num_buckets_, buf, sizeof(num_buckets_));
     buf += sizeof(num_buckets_);
     table_ = new TableType<bits_per_item>(num_buckets_);
-    unsigned int* sz = reinterpret_cast<unsigned int*>(buf);
+    unsigned int *sz = reinterpret_cast<unsigned int *>(buf);
     buf += sizeof(unsigned int);
     table_->fromBuf(buf, *sz);
     buf += *sz;
@@ -129,12 +133,11 @@ class CuckooFilter {
     buf += sizeof(num_items_);
     memmove(&victim_, buf, sizeof(victim_));
     buf += sizeof(victim_);
-    sz = reinterpret_cast<unsigned int*>(buf);
+    sz = reinterpret_cast<unsigned int *>(buf);
     buf += sizeof(unsigned int);
-    hasher_->from(buf, *sz);
+    hasher_.fromBuf(buf, *sz);
     buf += *sz;
-    if(buf-buf_start != len)
-      return 1;
+    if (buf - buf_start != len) return 1;
     return 0;
   }
 
