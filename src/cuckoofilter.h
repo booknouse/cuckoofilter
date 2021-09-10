@@ -35,15 +35,16 @@ template <typename ItemType, size_t bits_per_item,
 class CuckooFilter {
   // Storage of items
   TableType<bits_per_item> *table_;
+  size_t num_buckets_;
 
   // Number of items stored
   size_t num_items_;
 
-  typedef struct {
+  typedef struct __attribute__((__packed__)) {
     size_t index;
     uint32_t tag;
     bool used;
-  } VictimCache;
+  } VictimCache ;
 
   VictimCache victim_;
 
@@ -88,16 +89,54 @@ class CuckooFilter {
  public:
   explicit CuckooFilter(const size_t max_num_keys) : num_items_(0), victim_(), hasher_() {
     size_t assoc = 4;
-    size_t num_buckets = upperpower2(std::max<uint64_t>(1, max_num_keys / assoc));
-    double frac = (double)max_num_keys / num_buckets / assoc;
+    num_buckets_ = upperpower2(std::max<uint64_t>(1, max_num_keys / assoc));
+    double frac = (double)max_num_keys / num_buckets_ / assoc;
     if (frac > 0.96) {
-      num_buckets <<= 1;
+      num_buckets_ <<= 1;
     }
     victim_.used = false;
-    table_ = new TableType<bits_per_item>(num_buckets);
+    table_ = new TableType<bits_per_item>(num_buckets_);
   }
 
   ~CuckooFilter() { delete table_; }
+  unsigned char* serialize(unsigned char* buf) {
+    unsigned int total_sz = sizeof(num_buckets_) + table_->serialSize() + sizeof(num_items_) + sizeof(victim_) + hasher_->serialSize();
+    memmove(buf, &total_sz, sizeof(unsigned int));
+    buf += sizeof(unsigned int);
+    memmove(buf, &num_buckets_, sizeof(num_buckets_));
+    buf += sizeof(num_buckets_);
+    buf = table_->serialize(buf);
+    memmove(buf, &num_items_, sizeof(num_items_));
+    buf += sizeof(num_items_);
+    memmove(buf, &victim_, sizeof(victim_));
+    buf += sizeof(victim_);
+    buf = hasher_->serialize(buf);
+    return buf;
+  }
+  unsigned int serialSize() const {
+    return sizeof(unsigned int)+ sizeof(num_buckets_) + table_->serialSize() + sizeof(num_items_) + sizeof(victim_) + hasher_->serialSize();
+  }
+  int fromBuf(unsigned char* buf, unsigned int len) {
+    auto buf_start = buf;
+    memmove(&num_buckets_, buf, sizeof(num_buckets_));
+    buf += sizeof(num_buckets_);
+    table_ = new TableType<bits_per_item>(num_buckets_);
+    unsigned int* sz = reinterpret_cast<unsigned int*>(buf);
+    buf += sizeof(unsigned int);
+    table_->fromBuf(buf, *sz);
+    buf += *sz;
+    memmove(&num_items_, buf, sizeof(num_items_));
+    buf += sizeof(num_items_);
+    memmove(&victim_, buf, sizeof(victim_));
+    buf += sizeof(victim_);
+    sz = reinterpret_cast<unsigned int*>(buf);
+    buf += sizeof(unsigned int);
+    hasher_->from(buf, *sz);
+    buf += *sz;
+    if(buf-buf_start != len)
+      return 1;
+    return 0;
+  }
 
   // Add an item to the filter.
   Status Add(const ItemType &item);

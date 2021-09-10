@@ -32,6 +32,7 @@ class SingleTable {
   size_t num_buckets_;
 
  public:
+  SingleTable():num_buckets_(0), buckets_(nullptr){}
   explicit SingleTable(const size_t num) : num_buckets_(num) {
     buckets_ = new Bucket[num_buckets_ + kPaddingBuckets];
     memset(buckets_, 0, kBytesPerBucket * (num_buckets_ + kPaddingBuckets));
@@ -39,6 +40,37 @@ class SingleTable {
 
   ~SingleTable() { 
     delete[] buckets_;
+  }
+
+  unsigned char* serialize(unsigned char*buf){
+    unsigned int bucket_size = sizeof(Bucket);
+    unsigned int ser_size = sizeof(size_t) + num_buckets_*bucket_size;
+    memmove(buf,&ser_size,sizeof(unsigned int));
+    buf += sizeof(unsigned int);
+    memmove(buf, &num_buckets_, sizeof(num_buckets_));
+    buf += sizeof(num_buckets_);
+    for(unsigned int i =0;i<num_buckets_;i++){
+      memmove(buf, buckets_[i].bits_, bucket_size);
+      buf += bucket_size;
+    }
+    return buf;
+  }
+  unsigned int serialSize() const {
+    return sizeof(unsigned int) + sizeof(size_t) + num_buckets_*sizeof(Bucket);
+  }
+  int fromBuf(unsigned char* buf, unsigned int len){
+    auto buf_start = buf;
+    memmove(&num_buckets_, buf, sizeof(num_buckets_));
+    buf += sizeof(num_buckets_);
+    buckets_ = new Bucket[num_buckets_ + kPaddingBuckets];
+    unsigned int bucket_size = sizeof(Bucket);
+    for(unsigned int i =0;i<num_buckets_;i++){
+      memmove(buckets_[i].bits_, buf, bucket_size);
+      buf += bucket_size;
+    }
+    if(buf - buf_start != len )
+      return 1;
+    return 0;
   }
 
   size_t NumBuckets() const {
