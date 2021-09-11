@@ -67,17 +67,17 @@ class TwoIndependentMultiplyShift {
   }
 
   unsigned char *serialize(unsigned char *buf) {
-    unsigned int total_sz = 2 * sizeof(unsigned __int128);
+    /*unsigned int total_sz = 2 * sizeof(unsigned __int128);
     memmove(buf, &total_sz, sizeof(total_sz));
-    buf += sizeof(total_sz);
+    buf += sizeof(total_sz);*/
     memmove(buf, &multiply_, sizeof(multiply_));
     buf += sizeof(multiply_);
     memmove(buf, &add_, sizeof(add_));
     buf += sizeof(add_);
     return buf;
   }
-  unsigned int serialSize() const {
-    return sizeof(unsigned int) + 2 * sizeof(unsigned __int128);
+  unsigned int serializedSize() const {
+    return 2 * sizeof(unsigned __int128);
   }
   int fromBuf(unsigned char *buf, unsigned int len) {
     auto buf_start = buf;
@@ -113,8 +113,8 @@ class SimpleTabulation {
   }
 
   unsigned char *serialize(unsigned char *buf) {
-    unsigned int total_sz = sizeof(tables_);
-    memmove(buf, &total_sz, sizeof(total_sz));
+    /*unsigned int total_sz = sizeof(tables_);
+    memmove(buf, &total_sz, sizeof(total_sz));*/
     auto array_dimeny_sz = sizeof(tables_[0]);
     auto array_dimenx_sz = sizeof(tables_) / array_dimeny_sz;
     for (unsigned int i = 0; i < array_dimenx_sz; i++) {
@@ -123,8 +123,8 @@ class SimpleTabulation {
     }
     return buf;
   }
-  unsigned int serialSize() const {
-    return sizeof(unsigned int) + sizeof(tables_);
+  unsigned int serializedSize() const {
+    return sizeof(tables_);
   }
   int fromBuf(unsigned char *buf, unsigned int len) {
     auto buf_start = buf;

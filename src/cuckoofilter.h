@@ -101,24 +101,30 @@ class CuckooFilter {
 
   ~CuckooFilter() { delete table_; }
   unsigned char *serialize(unsigned char *buf) {
-    unsigned int total_sz = sizeof(num_buckets_) + table_->serialSize() +
+    /*unsigned int total_sz = sizeof(num_buckets_) + table_->serialSize() +
                             sizeof(num_items_) + sizeof(victim_) +
                             hasher_.serialSize();
     memmove(buf, &total_sz, sizeof(unsigned int));
-    buf += sizeof(unsigned int);
+    buf += sizeof(unsigned int);*/
     memmove(buf, &num_buckets_, sizeof(num_buckets_));
     buf += sizeof(num_buckets_);
+    auto table_sz = table_->serializedSize();
+    memmove(buf, &table_sz, sizeof(table_sz));
+    buf += sizeof(table_sz);
     buf = table_->serialize(buf);
     memmove(buf, &num_items_, sizeof(num_items_));
     buf += sizeof(num_items_);
     memmove(buf, &victim_, sizeof(victim_));
     buf += sizeof(victim_);
+    auto hasher_sz = hasher_.serializedSize();
+    memmove(buf, &hasher_sz, sizeof(hasher_sz));
+    buf += sizeof(hasher_sz);
     buf = hasher_.serialize(buf);
     return buf;
   }
-  unsigned int serialSize() const {
-    return sizeof(unsigned int) + sizeof(num_buckets_) + table_->serialSize() +
-           sizeof(num_items_) + sizeof(victim_) + hasher_.serialSize();
+  unsigned int serializedSize() const {
+    return sizeof(unsigned int)*2 + sizeof(num_buckets_) + table_->serializedSize() +
+    sizeof(num_items_) + sizeof(victim_) + hasher_.serializedSize();
   }
   int fromBuf(unsigned char *buf, unsigned int len) {
     auto buf_start = buf;

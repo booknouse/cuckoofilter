@@ -45,9 +45,9 @@ class SingleTable {
   unsigned char *serialize(unsigned char *buf) {
     unsigned int bucket_size = sizeof(Bucket);
     auto real_num_buckets = num_buckets_ + kPaddingBuckets;
-    unsigned int ser_size = sizeof(size_t) + real_num_buckets * bucket_size;
+    /*unsigned int ser_size = sizeof(size_t) + real_num_buckets * bucket_size;
     memmove(buf, &ser_size, sizeof(unsigned int));
-    buf += sizeof(unsigned int);
+    buf += sizeof(unsigned int);*/
     memmove(buf, &num_buckets_, sizeof(num_buckets_));
     buf += sizeof(num_buckets_);
     for (unsigned int i = 0; i < real_num_buckets; i++) {
@@ -56,8 +56,8 @@ class SingleTable {
     }
     return buf;
   }
-  unsigned int serialSize() const {
-    return sizeof(unsigned int) + sizeof(size_t) +
+  unsigned int serializedSize() const {
+    return sizeof(size_t) +
            (num_buckets_ + kPaddingBuckets) * sizeof(Bucket);
   }
   int fromBuf(unsigned char *buf, unsigned int len) {
